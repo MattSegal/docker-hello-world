@@ -13,7 +13,7 @@ services:
         entrypoint: /app/start-worker.sh
         build:
             context: .
-            dockerfile: dockerfile.worker
+            dockerfile: dockerfile
         volumes:
             - ./app:/app
         links:
@@ -28,12 +28,12 @@ services:
             DB_HOST: database
             DB_PORT: 5432
             CELERY_HOST: rabbit
-            DJANGO_SETTINGS_MODULE: app.settings
+            DJANGO_SETTINGS_MODULE: reddit.settings
     web:
-        entrypoint: /app/start-web.sh
+        command: ./manage.py runserver 0.0.0.0:8000
         build:
             context: .
-            dockerfile: dockerfile.web
+            dockerfile: dockerfile
         ports:
             - 8000:8000
         volumes:
@@ -51,4 +51,4 @@ services:
             DB_HOST: database
             DB_PORT: 5432
             CELERY_HOST: rabbit
-            DJANGO_SETTINGS_MODULE: app.settings
+            DJANGO_SETTINGS_MODULE: reddit.settings
