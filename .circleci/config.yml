@@ -1,0 +1,31 @@
+# CircleCI 2.0 configuration file
+# https://circleci.com/blog/how-to-build-a-docker-image-on-circleci-2-0/
+version: 2
+jobs:
+  build:
+    working_directory: /app
+    docker:
+      # Use a docker image that has Docker and Git
+      - image: docker:17.05.0-ce-git
+    steps:
+      # Checkout source  to /app
+      - checkout
+      # Allows us to run docker-in-docker
+      - setup_remote_docker
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --no-cache py-pip=9.0.0-r1
+            pip install docker-compose==1.12.0 awscli==1.11.76
+      - run:
+          name: Build application Docker image
+          command: |
+            docker build -t app .
+      - run:
+          name: Push container to ECS
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              eval $(aws ecr get-login --region ap-southeast-2 | sed 's|https://||')
+              docker tag app "${ECR_ENDPOINT}/reddit:${CIRCLE_SHA1}"
+              docker push "${ECR_ENDPOINT}/reddit:${CIRCLE_SHA1}"
+            fi
