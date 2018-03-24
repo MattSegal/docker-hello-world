@@ -1,8 +1,13 @@
 # CircleCI 2.0 configuration file
+# https://circleci.com/docs/2.0/configuration-reference/
 # https://circleci.com/blog/how-to-build-a-docker-image-on-circleci-2-0/
+# https://circleci.com/gh/MattSegal
 version: 2
 jobs:
   build:
+    branches:
+      only:
+        - master
     working_directory: /app
     docker:
       # Use a docker image that has Docker and Git
@@ -24,8 +29,6 @@ jobs:
       - run:
           name: Push container to ECS
           command: |
-            if [ "${CIRCLE_BRANCH}" == "master" ]; then
-              eval $(aws ecr get-login --region ap-southeast-2 | sed 's|https://||')
-              docker tag app "${ECR_ENDPOINT}/reddit:${CIRCLE_SHA1}"
-              docker push "${ECR_ENDPOINT}/reddit:${CIRCLE_SHA1}"
-            fi
+            eval $(aws ecr get-login --region ap-southeast-2 | sed 's|https://||')
+            docker tag app "${ECR_ENDPOINT}/reddit:${CIRCLE_SHA1}"
+            docker push "${ECR_ENDPOINT}/reddit:${CIRCLE_SHA1}"
