@@ -12,10 +12,10 @@ services:
             - CELERY_HOST=rabbit
             - REDIS_HOST=redis
             - DJANGO_SETTINGS_MODULE=reddit.settings.prod
-            # Pass-through
-            - DEBUG
             - REDDIT_DB_NAME=reddit
             - REDDIT_DB_PORT=5432
+            # Pass-through
+            - DEBUG
             - REDDIT_DB_USER
             - REDDIT_DB_PASSWORD
             - REDDIT_DB_HOST
@@ -25,13 +25,13 @@ services:
         ports:
             - 8000:8000
         environment:
-            - DEBUG=False
             - CELERY_HOST=rabbit
             - REDIS_HOST=redis
             - DJANGO_SETTINGS_MODULE=reddit.settings.prod
-            # Pass-through
             - REDDIT_DB_NAME=reddit
             - REDDIT_DB_PORT=5432
+            # Pass-through
+            - DEBUG
             - REDDIT_DB_USER
             - REDDIT_DB_PASSWORD
             - REDDIT_DB_HOST
