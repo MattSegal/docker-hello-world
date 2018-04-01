@@ -16,5 +16,5 @@ gunicorn reddit.wsgi:application \
   --bind 0.0.0.0:8000 \
   --capture-output \
   --log-level info \
-  --error-logfile /var/log/gunicorn/access.log \
-  --access-logfile /var/log/gunicorn/error.log
+  --error-logfile /var/log/gunicorn/error.log \
+  --access-logfile /var/log/gunicorn/access.log

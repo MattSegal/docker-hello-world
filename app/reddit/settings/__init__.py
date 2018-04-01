@@ -1,3 +1,4 @@
+# https://github.com/django/django/blob/master/django/conf/global_settings.py
 import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)

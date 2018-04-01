@@ -12,7 +12,8 @@ RUN \
         python3-dev \
        	python3-pip \
        	postgresql-client \
-       	postgresql-common
+       	postgresql-common \
+        curl
 
 # Install Python packages
 COPY app/requirements.txt .

@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 
 services:
     database:
@@ -28,10 +28,10 @@ services:
             DB_HOST: database
             DB_PORT: 5432
             CELERY_HOST: rabbit
+            REDIS_HOST: redis
             DJANGO_SETTINGS_MODULE: reddit.settings
     web:
         command: ./manage.py runserver 0.0.0.0:8000
-        # entrypoint: /app/start-web.sh
         build:
             context: .
             dockerfile: dockerfile
@@ -52,4 +52,5 @@ services:
             DB_HOST: database
             DB_PORT: 5432
             CELERY_HOST: rabbit
+            REDIS_HOST: redis
             DJANGO_SETTINGS_MODULE: reddit.settings
