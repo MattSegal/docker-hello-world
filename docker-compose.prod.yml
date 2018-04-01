@@ -9,11 +9,11 @@ services:
         image: localhost:5000/reddit
         entrypoint: /app/start-worker.sh
         environment:
-            - DEBUG=False
             - CELERY_HOST=rabbit
             - REDIS_HOST=redis
-            - DJANGO_SETTINGS_MODULE=reddit.settings
+            - DJANGO_SETTINGS_MODULE=reddit.settings.prod
             # Pass-through
+            - DEBUG
             - REDDIT_DB_NAME
             - REDDIT_DB_USER
             - REDDIT_DB_PASSWORD
@@ -28,7 +28,7 @@ services:
             - DEBUG=False
             - CELERY_HOST=rabbit
             - REDIS_HOST=redis
-            - DJANGO_SETTINGS_MODULE=reddit.settings
+            - DJANGO_SETTINGS_MODULE=reddit.settings.prod
             # Pass-through
             - REDDIT_DB_NAME
             - REDDIT_DB_USER
