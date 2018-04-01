@@ -14,11 +14,11 @@ services:
             - DJANGO_SETTINGS_MODULE=reddit.settings.prod
             # Pass-through
             - DEBUG
-            - REDDIT_DB_NAME
+            - REDDIT_DB_NAME=reddit
+            - REDDIT_DB_PORT=5432
             - REDDIT_DB_USER
             - REDDIT_DB_PASSWORD
             - REDDIT_DB_HOST
-            - REDDIT_DB_PORT
     web:
         image: localhost:5000/reddit
         entrypoint: /app/start-web.sh
@@ -30,8 +30,8 @@ services:
             - REDIS_HOST=redis
             - DJANGO_SETTINGS_MODULE=reddit.settings.prod
             # Pass-through
-            - REDDIT_DB_NAME
+            - REDDIT_DB_NAME=reddit
+            - REDDIT_DB_PORT=5432
             - REDDIT_DB_USER
             - REDDIT_DB_PASSWORD
             - REDDIT_DB_HOST
-            - REDDIT_DB_PORT
