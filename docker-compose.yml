@@ -10,6 +10,7 @@ services:
     redis:
         image: redis
     worker:
+        image: localhost:5000/reddit
         entrypoint: /app/start-worker.sh
         build:
             context: .
@@ -31,6 +32,7 @@ services:
             REDIS_HOST: redis
             DJANGO_SETTINGS_MODULE: reddit.settings
     web:
+        image: localhost:5000/reddit
         command: ./manage.py runserver 0.0.0.0:8000
         build:
             context: .

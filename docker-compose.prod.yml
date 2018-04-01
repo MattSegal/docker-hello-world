@@ -6,7 +6,6 @@ services:
     redis:
         image: redis
     worker:
-        image: localhost:5000/reddit
         entrypoint: /app/start-worker.sh
         environment:
             - CELERY_HOST=rabbit
@@ -20,7 +19,6 @@ services:
             - REDDIT_DB_HOST
             - REDDIT_DB_PORT
     web:
-        image: localhost:5000/reddit
         entrypoint: /app/start-web.sh
         ports:
             - 8000:8000
