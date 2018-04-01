@@ -2,7 +2,6 @@ version: '3'
 
 services:
     worker:
-        image: localhost:5000/reddit
         environment:
             DEBUG: 'True'
             DB_NAME: postgres
@@ -14,7 +13,6 @@ services:
             REDIS_HOST: redis
             DJANGO_SETTINGS_MODULE: reddit.settings
     web:
-        image: localhost:5000/reddit
         entrypoint: /app/start-web.sh
         environment:
             DEBUG: 'True'
