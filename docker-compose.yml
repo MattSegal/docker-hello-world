@@ -10,7 +10,6 @@ services:
     redis:
         image: redis
     worker:
-        image: localhost:5000/reddit
         entrypoint: /app/start-worker.sh
         build:
             context: .
@@ -23,16 +22,15 @@ services:
             - redis
         environment:
             DEBUG: 'True'
-            DB_NAME: postgres
-            DB_USER: postgres
-            DB_PASSWORD: password
-            DB_HOST: database
-            DB_PORT: 5432
+            REDDIT_DB_NAME: postgres
+            REDDIT_DB_USER: postgres
+            REDDIT_DB_PASSWORD: password
+            REDDIT_DB_HOST: database
+            REDDIT_DB_PORT: 5432
             CELERY_HOST: rabbit
             REDIS_HOST: redis
             DJANGO_SETTINGS_MODULE: reddit.settings
     web:
-        image: localhost:5000/reddit
         command: ./manage.py runserver 0.0.0.0:8000
         build:
             context: .
@@ -48,11 +46,11 @@ services:
             - worker
         environment:
             DEBUG: 'True'
-            DB_NAME: postgres
-            DB_USER: postgres
-            DB_PASSWORD: password
-            DB_HOST: database
-            DB_PORT: 5432
+            REDDIT_DB_NAME: postgres
+            REDDIT_DB_USER: postgres
+            REDDIT_DB_PASSWORD: password
+            REDDIT_DB_HOST: database
+            REDDIT_DB_PORT: 5432
             CELERY_HOST: rabbit
             REDIS_HOST: redis
             DJANGO_SETTINGS_MODULE: reddit.settings

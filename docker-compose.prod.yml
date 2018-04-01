@@ -1,26 +1,37 @@
 version: '3'
 
 services:
+    rabbit:
+        image: rabbitmq
+    redis:
+        image: redis
     worker:
+        image: localhost:5000/reddit
+        entrypoint: /app/start-worker.sh
         environment:
-            DEBUG: 'True'
-            DB_NAME: postgres
-            DB_USER: postgres
-            DB_PASSWORD: password
-            DB_HOST: database
-            DB_PORT: 5432
-            CELERY_HOST: rabbit
-            REDIS_HOST: redis
-            DJANGO_SETTINGS_MODULE: reddit.settings
+            - DEBUG=False
+            - CELERY_HOST=rabbit
+            - REDIS_HOST=redis
+            - DJANGO_SETTINGS_MODULE=reddit.settings
+            # Pass-through
+            - REDDIT_DB_NAME
+            - REDDIT_DB_USER
+            - REDDIT_DB_PASSWORD
+            - REDDIT_DB_HOST
+            - REDDIT_DB_PORT
     web:
+        image: localhost:5000/reddit
         entrypoint: /app/start-web.sh
+        ports:
+            - 8000:8000
         environment:
-            DEBUG: 'True'
-            DB_NAME: postgres
-            DB_USER: postgres
-            DB_PASSWORD: password
-            DB_HOST: database
-            DB_PORT: 5432
-            CELERY_HOST: rabbit
-            REDIS_HOST: redis
-            DJANGO_SETTINGS_MODULE: reddit.settings
+            - DEBUG=False
+            - CELERY_HOST=rabbit
+            - REDIS_HOST=redis
+            - DJANGO_SETTINGS_MODULE=reddit.settings
+            # Pass-through
+            - REDDIT_DB_NAME
+            - REDDIT_DB_USER
+            - REDDIT_DB_PASSWORD
+            - REDDIT_DB_HOST
+            - REDDIT_DB_PORT
