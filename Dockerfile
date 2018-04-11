@@ -13,6 +13,7 @@ RUN \
        	python3-pip \
        	postgresql-client \
        	postgresql-common \
+        iputils-ping \
         curl
 
 # Install Python packages

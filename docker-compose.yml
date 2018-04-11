@@ -4,9 +4,7 @@ services:
     database:
         image: postgres
         volumes:
-            - ./postgres-data:/var/lib/postgresql/data
-    rabbit:
-        image: rabbitmq
+            - postgres-data:/var/lib/postgresql/data
     redis:
         image: redis
     worker:
@@ -14,45 +12,50 @@ services:
         entrypoint: /app/start-worker.sh
         build:
             context: .
-            dockerfile: dockerfile
+            dockerfile: Dockerfile
         volumes:
             - ./app:/app
         links:
             - database
-            - rabbit
             - redis
         environment:
-            DEBUG: 'True'
-            REDDIT_DB_NAME: postgres
-            REDDIT_DB_USER: postgres
-            REDDIT_DB_PASSWORD: password
-            REDDIT_DB_HOST: database
-            REDDIT_DB_PORT: 5432
-            CELERY_HOST: rabbit
+            PGDATABASE: postgres
+            PGUSER: postgres
+            PGPASSWORD: password
+            PGHOST: database
+            PGPORT: 5432
+            CELERY_HOST: redis
             REDIS_HOST: redis
-            DJANGO_SETTINGS_MODULE: reddit.settings
+            DJANGO_SETTINGS_MODULE: reddit.settings.dev
+            # Read from .env
+            REDDIT_USER_AGENT: $REDDIT_USER_AGENT
+            REDDIT_BASIC_AUTH: $REDDIT_BASIC_AUTH
     web:
         image: localhost:5000/reddit
         command: ./manage.py runserver 0.0.0.0:8000
         build:
             context: .
-            dockerfile: dockerfile
+            dockerfile: Dockerfile
         ports:
             - 8000:8000
         volumes:
           - ./app:/app
         links:
             - database
-            - rabbit
             - redis
             - worker
         environment:
-            DEBUG: 'True'
-            REDDIT_DB_NAME: postgres
-            REDDIT_DB_USER: postgres
-            REDDIT_DB_PASSWORD: password
-            REDDIT_DB_HOST: database
-            REDDIT_DB_PORT: 5432
-            CELERY_HOST: rabbit
+            PGDATABASE: postgres
+            PGUSER: postgres
+            PGPASSWORD: password
+            PGHOST: database
+            PGPORT: 5432
+            CELERY_HOST: redis
             REDIS_HOST: redis
-            DJANGO_SETTINGS_MODULE: reddit.settings
+            DJANGO_SETTINGS_MODULE: reddit.settings.dev
+            # Read from .env
+            REDDIT_BASIC_AUTH: $REDDIT_BASIC_AUTH
+            REDDIT_BASIC_AUTH: $REDDIT_BASIC_AUTH
+
+volumes:
+    postgres-data:

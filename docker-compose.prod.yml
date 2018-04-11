@@ -1,37 +1,39 @@
 version: '3'
 
 services:
-    rabbit:
-        image: rabbitmq
     redis:
         image: redis
     worker:
         image: localhost:5000/reddit
         entrypoint: /app/start-worker.sh
         environment:
-            - CELERY_HOST=rabbit
-            - REDIS_HOST=redis
             - DJANGO_SETTINGS_MODULE=reddit.settings.prod
-            - REDDIT_DB_NAME=reddit
-            - REDDIT_DB_PORT=5432
+            - CELERY_HOST=redis
+            - REDIS_HOST=redis
+            # Postgres
+            - PGDATABASE=reddit
+            - PGUSER=$REDDIT_DB_USER
+            - PGPASSWORD=$REDDIT_DB_PASSWORD
+            - PGHOST=$DOCKERHOST
+            - PGPORT=5432
             # Pass-through
-            - DEBUG
-            - REDDIT_DB_USER
-            - REDDIT_DB_PASSWORD
-            - REDDIT_DB_HOST
+            - DJANGO_SECRET_KEY
+            - REDDIT_RAVEN_DSN
     web:
         image: localhost:5000/reddit
         entrypoint: /app/start-web.sh
         ports:
-            - 8000:8000
+            - 8002:8002
         environment:
-            - CELERY_HOST=rabbit
-            - REDIS_HOST=redis
             - DJANGO_SETTINGS_MODULE=reddit.settings.prod
-            - REDDIT_DB_NAME=reddit
-            - REDDIT_DB_PORT=5432
+            - CELERY_HOST=redis
+            - REDIS_HOST=redis
+            # Postgres
+            - PGDATABASE=reddit
+            - PGUSER=$REDDIT_DB_USER
+            - PGPASSWORD=$REDDIT_DB_PASSWORD
+            - PGHOST=$DOCKERHOST
+            - PGPORT=5432
             # Pass-through
-            - DEBUG
-            - REDDIT_DB_USER
-            - REDDIT_DB_PASSWORD
-            - REDDIT_DB_HOST
+            - DJANGO_SECRET_KEY
+            - REDDIT_RAVEN_DSN
