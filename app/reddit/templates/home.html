@@ -1,9 +1,24 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Home</title>
+    <title>Home</title>
 </head>
 <body>
-Count: {{ counter.count }}
+<h1>Users</h1>
+{% for user in users%}
+  <p>{{ user.username }}</p>
+{% endfor %}
+{% for thread in threads%}
+  <div style="outline: 1px solid red">
+    <p>{{ thread.title }}</p>
+    {% for comment in thread.comments.all %}
+      <div style="outline: 2px solid green">
+        {% autoescape off %}
+        {{ comment.body_html }}
+        {% endautoescape %}
+      </div>
+    {% endfor %}
+  </div>
+{% endfor %}
 </body>
 </html>

@@ -1,3 +1,5 @@
+import html
+
 import requests
 from celery import shared_task
 from celery.utils.log import get_task_logger
@@ -37,34 +39,40 @@ def fetch_comments(reddit_user_pk):
     comments_data = resp.json()['data']['children']
     logging.info('Creating comments')
     thread_ids = set()
-    for data in comments_data:
+    for wrapped_data in comments_data:
+        data = wrapped_data['data']
+        thread_id = data['link_id'].replace(RedditThread.REDDIT_TYPE + '_', '')
         reddit_comment, created = RedditComment.objects.update_or_create(
             reddit_id=data['id'],
             defaults={
-                # TODO: Keep track of thread:comment mapping FK somehow
                 'author': reddit_user,
+                'link_id': thread_id,
                 'score': data['score'],
                 'downs': data['downs'],
                 'created_utc': data['created_utc'],
-                'body_html': data['body_html'],
+                'body_html': html.unescape(data['body_html']),
             }
         )
         thread_ids.add(data['link_id'])
-        # Logging
+        if created:
+            logging.info('Created RedditComment[%s]', reddit_comment.pk)
+        else:
+            logging.info('Found RedditComment[%s]', reddit_comment.pk)
 
-    # Kick off thread_ids fetch
+    # Get threads data for fetched comments
+    thread_id_list = ','.join(list(thread_ids))
+
+    fetch_threads.delay(thread_id_list, reddit_user_pk)
 
     logging.info('Updating RedditUser[%s]', reddit_user_pk)
     reddit_user.fetched_at = timezone.now()
     reddit_user.save()
-    logging.info('Done', reddit_user_pk)
+    logging.info('Done fetching RedditComments for RedditUser[%s]', reddit_user_pk)
 
 
 @shared_task
-def fetch_threads(thread_ids, reddit_user_pk):
+def fetch_threads(thread_id_list, reddit_user_pk):
     logging.info('Processing threads from RedditUser[%s]', reddit_user_pk)
-
-    thread_id_list = ','.join(list(thread_ids))
     url = '{}/by_id/{}'.format(BASE_URI, thread_id_list)
     params = {
         'limit': 100,
@@ -78,7 +86,9 @@ def fetch_threads(thread_ids, reddit_user_pk):
     resp.raise_for_status()
     threads_data = resp.json()['data']['children']
     logging.info('Creating threads')
-    for data in threads_data:
+    for wrapped_data in threads_data:
+        data = wrapped_data['data']
+        author, _ = RedditUser.objects.get_or_create(username=data['author'])
         reddit_thread, created = RedditThread.objects.update_or_create(
             reddit_id=data['id'],
             defaults={
@@ -86,11 +96,19 @@ def fetch_threads(thread_ids, reddit_user_pk):
                 'score': data['score'],
                 'num_comments': data['num_comments'],
                 'created_utc': data['created_utc'],
-                'author': data['author'],  # Create author if not in db already
+                'author': author,
                 'subreddit': data['subreddit'],
                 'permalink': data['permalink'],
                 'title': data['title'],
                 'url': "http://www.reddit.com" + data['permalink'],
             }
         )
-    logging.info('Done', reddit_user_pk)
+        if created:
+            logging.info('Created RedditThread[%s]', reddit_thread.pk)
+        else:
+            logging.info('Fetched RedditThread[%s]', reddit_thread.pk)
+
+        logging.info('Updating RedditComments with link_id %s to use RedditThread[%s]', data['id'], reddit_thread.pk)
+        RedditComment.objects.filter(link_id=data['id']).update(thread=reddit_thread)
+
+    logging.info('Done fetching RedditThreads for RedditUser[%s]', reddit_user_pk)
