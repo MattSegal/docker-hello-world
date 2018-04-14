@@ -8,3 +8,5 @@ django-extensions
 celery[redis]
 redis
 requests
+social-auth-app-django
+whitenoise

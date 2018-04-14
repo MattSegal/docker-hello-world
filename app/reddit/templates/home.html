@@ -1,24 +1,93 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Home</title>
-</head>
-<body>
-<h1>Users</h1>
-{% for user in users%}
-  <p>{{ user.username }}</p>
-{% endfor %}
-{% for thread in threads%}
-  <div style="outline: 1px solid red">
-    <p>{{ thread.title }}</p>
-    {% for comment in thread.comments.all %}
-      <div style="outline: 2px solid green">
-        {% autoescape off %}
-        {{ comment.body_html }}
-        {% endautoescape %}
+{% extends '_base.html' %}
+
+{% block title %}Reddit Feed{% endblock %}
+{% block body_class %}home{% endblock %}
+
+{% block content %}
+{% if user.is_authenticated %}
+  <div class="following bg-secondary">
+    <div class="container">
+      <div class="row">
+        <div class="col col-lg-6">
+          {% if users %}
+            <ul class="list-group">
+              {% for reddit_user in users %}
+                <li class="list-group-item d-flex justify-content-between">
+                  <span>{{ reddit_user.username }} {% if reddit_user.loading %}(loading){% endif %}</span>
+                  <form class="unfollow" action="{% url 'unfollow' username=reddit_user.username %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="close">
+                      &times;
+                    </button>
+                  </form>
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </div>
       </div>
-    {% endfor %}
+      <div class="row">
+        <div class="col-lg-6">
+          <form action="{% url 'follow' %}" method="post">
+            <div class="input-group">
+              {% csrf_token %}
+              {{ form.username }}
+              <div class="input-group-append">
+                <input type="submit" value="Follow" class="btn btn-dark">
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
-{% endfor %}
-</body>
-</html>
+  {% for thread in threads%}
+    <div class="thread {% cycle '' 'bg-light' %}">
+      <div class="container">
+        <div class="row">
+          <div class="col">
+            <h2 class="thread-title">
+              <a href="{{thread.permalink}}" target="_blank" rel="noopener noreferrer">
+                {{ thread.title }}
+              </a>
+            </h2>
+            <small class="thread-subtitle">
+              By {{ thread.author.username }}, {{ thread.created_utc|date:"D jS M" }} in <a href="https://reddit.com/r/{{ thread.subreddit }}" target="_blank" rel="noopener noreferrer">/r/{{ thread.subreddit }}</a>
+            </small>
+            <ul class="list-group">
+              {% for comment in thread.comments.all %}
+                <li class="comment list-group-item">
+                  <div class="comment-header">
+                    <div class="details">
+                      <span>
+                         <a href="{{ comment.permalink }}" target="_blank" rel="noopener noreferrer">
+                          {{ comment.author.username }}
+                        </a>
+                      </span>
+                      <span class="upvotes">
+                        ({{comment.score}} ups)
+                      </span>
+                    </div>
+                    <button type="button" class="btn btn-light" data-toggle="collapse" data-target="#{{ comment.reddit_id }}">+</button>
+                  </div>
+                  <div class="collapse" id="{{ comment.reddit_id }}">
+                    <div class="comment-body">
+                      {% autoescape off %}
+                      {{ comment.body_html }}
+                      {% endautoescape %}
+                    </div>
+                  </div>
+                </li>
+              {% endfor %}
+          </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+{% else %}
+<div class="container login-prompt">
+  Log in to continue.
+</div>
+{% endif %}
+{% endblock %}

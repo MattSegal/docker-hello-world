@@ -1,8 +1,45 @@
+import logging
 from datetime import datetime, timedelta
 
 import requests
 from django.conf import settings
+from django.utils import timezone
 from redis import Redis
+
+BASE_URI = settings.REDDIT_OAUTH_BASE_URI
+logger = logging.getLogger(__name__)
+
+
+def rate_limit():
+    """
+    TODO: Respect reddit API rate limit
+    """
+    pass
+
+
+def epoch_to_datetime_utc(epoch):
+    naive_dt = timezone.datetime.fromtimestamp(epoch)
+    return timezone.utc.localize(naive_dt)
+
+
+def validate_reddit_username(username):
+    """
+    Return whether a Reddit username is valid, based on Reddit's API
+    """
+    logger.info('Verifying username %s', username)
+    url = BASE_URI + '/api/username_available'
+    params = {
+        'user': username,
+    }
+    headers = {
+        'Authorization':  get_reddit_oauth_header(),
+        'User-Agent': settings.REDDIT_USER_AGENT
+    }
+    resp = requests.get(url, params=params, headers=headers)
+    resp.raise_for_status()
+    result = resp.json()
+    logger.info('Username %s is available: %s', username, result)
+    return not result
 
 
 def get_reddit_oauth_header():

@@ -7,22 +7,19 @@ from django.conf import settings
 from django.utils import timezone
 
 from .models import RedditUser, RedditThread, RedditComment
-from .utils import get_reddit_oauth_header
+from .utils import get_reddit_oauth_header, epoch_to_datetime_utc, rate_limit
 
-BASE_URI = 'https://oauth.reddit.com'
-
-logging = get_task_logger(__name__)
-
-# TODO: Use Redis to keep under Reddit imposed rate limit
+BASE_URI = settings.REDDIT_OAUTH_BASE_URI
+logger = get_task_logger(__name__)
 
 
+# FIXME: Use INFO for logging not WARNING
 @shared_task
 def fetch_comments(reddit_user_pk):
-    logging.info('Fetching comments for RedditUser[%s]', reddit_user_pk)
+    logger.warning('Fetching comments for RedditUser[%s]', reddit_user_pk)
     reddit_user = RedditUser.objects.get(pk=reddit_user_pk)
-    logging.info('Found RedditUser with name %s', reddit_user.username)
-
-    # TODO: Bail if user has been fetched recently
+    logger.warning('Found RedditUser with name %s', reddit_user.username)
+    rate_limit()
 
     url = '{}/user/{}/comments'.format(BASE_URI, reddit_user.username)
     params = {
@@ -33,11 +30,11 @@ def fetch_comments(reddit_user_pk):
         'User-Agent': settings.REDDIT_USER_AGENT
     }
 
-    logging.info('Fetching comment data from Reddit API endpoint  %s', url)
+    logger.warning('Fetching comment data from Reddit API endpoint  %s', url)
     resp = requests.get(url, params=params, headers=headers)
     resp.raise_for_status()
     comments_data = resp.json()['data']['children']
-    logging.info('Creating comments')
+    logger.warning('Creating comments')
     thread_ids = set()
     for wrapped_data in comments_data:
         data = wrapped_data['data']
@@ -49,30 +46,27 @@ def fetch_comments(reddit_user_pk):
                 'link_id': thread_id,
                 'score': data['score'],
                 'downs': data['downs'],
-                'created_utc': data['created_utc'],
+                'permalink': 'https://reddit.com' + data['permalink'],
+                'created_utc': epoch_to_datetime_utc(data['created_utc']),
                 'body_html': html.unescape(data['body_html']),
             }
         )
         thread_ids.add(data['link_id'])
         if created:
-            logging.info('Created RedditComment[%s]', reddit_comment.pk)
+            logger.warning('Created RedditComment[%s]', reddit_comment.pk)
         else:
-            logging.info('Found RedditComment[%s]', reddit_comment.pk)
+            logger.warning('Found RedditComment[%s]', reddit_comment.pk)
 
     # Get threads data for fetched comments
     thread_id_list = ','.join(list(thread_ids))
-
     fetch_threads.delay(thread_id_list, reddit_user_pk)
-
-    logging.info('Updating RedditUser[%s]', reddit_user_pk)
-    reddit_user.fetched_at = timezone.now()
-    reddit_user.save()
-    logging.info('Done fetching RedditComments for RedditUser[%s]', reddit_user_pk)
+    logger.warning('Done fetching RedditComments for RedditUser[%s]', reddit_user_pk)
 
 
 @shared_task
 def fetch_threads(thread_id_list, reddit_user_pk):
-    logging.info('Processing threads from RedditUser[%s]', reddit_user_pk)
+    logger.warning('Processing threads from RedditUser[%s]', reddit_user_pk)
+    rate_limit()
     url = '{}/by_id/{}'.format(BASE_URI, thread_id_list)
     params = {
         'limit': 100,
@@ -81,11 +75,11 @@ def fetch_threads(thread_id_list, reddit_user_pk):
         'Authorization':  get_reddit_oauth_header(),
         'User-Agent': settings.REDDIT_USER_AGENT
     }
-    logging.info('Fetching thread data from Reddit API endpoint  %s', url)
+    logger.warning('Fetching thread data from Reddit API endpoint  %s', url)
     resp = requests.get(url, params=params, headers=headers)
     resp.raise_for_status()
     threads_data = resp.json()['data']['children']
-    logging.info('Creating threads')
+    logger.warning('Creating threads')
     for wrapped_data in threads_data:
         data = wrapped_data['data']
         author, _ = RedditUser.objects.get_or_create(username=data['author'])
@@ -95,20 +89,26 @@ def fetch_threads(thread_id_list, reddit_user_pk):
                 'is_self': data['is_self'],
                 'score': data['score'],
                 'num_comments': data['num_comments'],
-                'created_utc': data['created_utc'],
+                'created_utc': epoch_to_datetime_utc(data['created_utc']),
                 'author': author,
                 'subreddit': data['subreddit'],
-                'permalink': data['permalink'],
+                'permalink': 'https://reddit.com' + data['permalink'],
                 'title': data['title'],
                 'url': "http://www.reddit.com" + data['permalink'],
             }
         )
+        reddit_thread.commenters.add(reddit_user_pk)
         if created:
-            logging.info('Created RedditThread[%s]', reddit_thread.pk)
+            logger.warning('Created RedditThread[%s]', reddit_thread.pk)
         else:
-            logging.info('Fetched RedditThread[%s]', reddit_thread.pk)
+            logger.warning('Fetched RedditThread[%s]', reddit_thread.pk)
 
-        logging.info('Updating RedditComments with link_id %s to use RedditThread[%s]', data['id'], reddit_thread.pk)
+        logger.warning('Updating RedditComments with link_id %s to use RedditThread[%s]', data['id'], reddit_thread.pk)
         RedditComment.objects.filter(link_id=data['id']).update(thread=reddit_thread)
 
-    logging.info('Done fetching RedditThreads for RedditUser[%s]', reddit_user_pk)
+    logger.warning('Updating RedditUser[%s]', reddit_user_pk)
+    reddit_user = RedditUser.objects.get(pk=reddit_user_pk)
+    reddit_user.fetched_at = timezone.now()
+    reddit_user.loading = False
+    reddit_user.save()
+    logger.warning('Done fetching RedditThreads for RedditUser[%s]', reddit_user_pk)

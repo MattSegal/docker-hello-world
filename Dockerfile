@@ -25,3 +25,7 @@ RUN \
 
 # Mount the codebase
 ADD app /app
+
+ARG DJANGO_SETTINGS_MODULE=reddit.settings.prod
+ARG DJANGO_SECRET_KEY=not-a-secret
+RUN mkdir -p /static/ && ./manage.py collectstatic --noinput

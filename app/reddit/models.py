@@ -7,6 +7,7 @@ class RedditUser(models.Model):
     followers = models.ManyToManyField(User, related_name='followed_users')
     updated_at = models.DateTimeField(auto_now=True)
     fetched_at = models.DateTimeField(null=True)
+    loading = models.BooleanField(default=False)
 
     def __str__(self):
         return self.username
@@ -18,10 +19,11 @@ class RedditThread(models.Model):
     is_self = models.BooleanField()
     score = models.IntegerField()
     num_comments = models.PositiveIntegerField()
-    created_utc = models.BigIntegerField()
-    author = models.ForeignKey(RedditUser, related_name='threads', on_delete=models.CASCADE)
+    created_utc = models.DateTimeField()
+    author = models.ForeignKey(RedditUser, related_name='threads_authored', on_delete=models.CASCADE)
+    commenters = models.ManyToManyField(RedditUser, related_name='threads_commented')
     subreddit = models.CharField(max_length=128)
-    permalink = models.CharField(max_length=256)
+    permalink = models.URLField(max_length=256)
     title = models.CharField(max_length=512)
     url = models.CharField(max_length=512)
     updated_at = models.DateTimeField(auto_now=True)
@@ -36,8 +38,9 @@ class RedditComment(models.Model):
     thread = models.ForeignKey(RedditThread, null=True, related_name='comments', on_delete=models.SET_NULL)
     author = models.ForeignKey(RedditUser, related_name='comments', on_delete=models.CASCADE)
     score = models.IntegerField()
+    permalink = models.URLField(max_length=256)
     downs = models.PositiveIntegerField()
-    created_utc = models.BigIntegerField()
+    created_utc = models.DateTimeField()
     body_html = models.TextField()
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -19,6 +19,10 @@ services:
             # Pass-through
             - DJANGO_SECRET_KEY
             - REDDIT_RAVEN_DSN
+            - REDDIT_USER_AGENT
+            - REDDIT_BASIC_AUTH
+            - GOOGLE_OAUTH2_KEY
+            - GOOGLE_OAUTH2_SECRET
     web:
         image: localhost:5000/reddit
         entrypoint: /app/start-web.sh
@@ -37,3 +41,7 @@ services:
             # Pass-through
             - DJANGO_SECRET_KEY
             - REDDIT_RAVEN_DSN
+            - REDDIT_USER_AGENT
+            - REDDIT_BASIC_AUTH
+            - GOOGLE_OAUTH2_KEY
+            - GOOGLE_OAUTH2_SECRET

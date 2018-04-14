@@ -30,6 +30,8 @@ services:
             # Read from .env
             REDDIT_USER_AGENT: $REDDIT_USER_AGENT
             REDDIT_BASIC_AUTH: $REDDIT_BASIC_AUTH
+            GOOGLE_OAUTH2_KEY: $GOOGLE_OAUTH2_KEY
+            GOOGLE_OAUTH2_SECRET: $GOOGLE_OAUTH2_SECRET
     web:
         image: localhost:5000/reddit
         command: ./manage.py runserver 0.0.0.0:8000
@@ -56,6 +58,8 @@ services:
             # Read from .env
             REDDIT_USER_AGENT: $REDDIT_USER_AGENT
             REDDIT_BASIC_AUTH: $REDDIT_BASIC_AUTH
+            GOOGLE_OAUTH2_KEY: $GOOGLE_OAUTH2_KEY
+            GOOGLE_OAUTH2_SECRET: $GOOGLE_OAUTH2_SECRET
 
 volumes:
     postgres-data:
