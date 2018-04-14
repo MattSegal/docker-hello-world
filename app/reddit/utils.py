@@ -48,9 +48,10 @@ def get_reddit_oauth_header():
     or if it expired.
     """
     redis = Redis(host=settings.REDIS_HOST)
-    token = redis.get(get_auth_key('token')).decode('utf-8')
-    created = redis.get(get_auth_key('created')).decode('utf-8')
-    valid_seconds = int(redis.get(get_auth_key('valid')).decode('utf-8')) or 0
+    token = get_cached_oauth_data('token', redis)
+    created = get_cached_oauth_data('created', redis)
+    valid_seconds = get_cached_oauth_data('valid', redis)
+    valid_seconds = int(valid_seconds) if valid_seconds else 0
 
     if created:
         created_datetime = datetime.strptime(created, '%Y-%m-%d %H:%M:%S.%f')
@@ -71,12 +72,22 @@ def get_reddit_oauth_header():
         )
         data =  response.json()
         token = data['access_token']
-        redis.set(get_auth_key('token'), token)
-        redis.set(get_auth_key('valid'), data['expires_in'])
-        redis.set(get_auth_key('created'), datetime.now())
+        set_cached_oauth_data('token', token, redis)
+        set_cached_oauth_data('valid', data['expires_in'], redis)
+        set_cached_oauth_data('created', datetime.now(), redis)
 
     return "bearer {0}".format(token)
 
 
-def get_auth_key(s):
-    return 'auth-token-' + s
+def set_cached_oauth_data(s, val, redis):
+    cache_key = 'auth-token-' + s
+    redis.set(cache_key, val)
+
+
+def get_cached_oauth_data(s, redis):
+    cache_key = 'auth-token-' + s
+    result = redis.get(cache_key)
+    if result:
+        return result.decode('utf-8')
+    else:
+        return None
